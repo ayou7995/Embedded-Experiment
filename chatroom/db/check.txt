@@ -1,0 +1,22 @@
+var Client = require('mariasql');
+
+var c = new Client({
+  host: '10.43.68.171',
+  user: 'ayou7995',
+  password: 'ayou7995'
+});
+
+c.query('USE ayou7995_chatroom');
+
+var qu = c.query('SELECT * FROM USER');
+qu.on('result', function(res) {
+  res.on('data', function(row) {
+    console.log(row);
+  }).on('end', function() {
+      console.log('Result set finished');
+  });
+}).on('end', function() {
+  console.log('No more result sets!');
+});
+
+c.end()

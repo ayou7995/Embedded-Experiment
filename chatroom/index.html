@@ -1,0 +1,260 @@
+<!doctype html>
+<html>
+  <head>
+    <title>~Ayou7995 chat room~</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; color:#FFFFFF; background:#000000;}
+      body { font: 30px Helvetica, Arial; }
+	  #chatInputBar{ width: 100%; overflow: hidden; background: rgb(130, 224, 255);padding: 3px;}
+	  #chatInputBar input { border: 0; padding: 10px; width: 100%;}
+	  #chatInputBar #userControl {float: left;}
+	  #chatInputBar select {border: 0; padding: 9px;}
+	  #chatInputBar span { display: block; overflow: hidden; padding: 0 5px;}
+      #chatInputBar #addUserBtn { border: 0; padding: 10px; width: auto; 
+          background: rgb(130, 224, 255); color:#000000;}
+      #chatInputBar #snedMessageBtn { border: 0; padding: 10px; width: auto; 
+          background: rgb(130, 224, 255); float: right; color:#000000;}
+      #messages {margin-left:270px; margin-top:40px ;margin-bottom:20px;background:#708090;width:70%; 
+          position: fixed; top:0; bottom: 64px; overflow:auto;}
+      #messages li { padding: 5px 10px;}
+      #messages li:nth-child(odd) { background: #696969; }
+      #footer{position: fixed; bottom: 0; width:100%;}
+      #myname{color:yellow;font-size:35px;margin:40px;}
+      #userList{margin-left:30px;margin-top:40px; margin-bottom:20px;background:#000000;width:10%;}
+      #userList button {font-size:30px;width:150px;border:0;margin:10px;}
+      #userList button:hover {font-size:32px;width:170px;border:0;
+          margin:10px;color:#000000;background:#F0E68C;}
+      #form {margin:20px;font-size:20px;}
+      #form button {font-size:20px;width:150px;margin-top:10px;}
+    </style>
+	<script src='https://cdn.socket.io/socket.io-1.3.5.js'></script>
+    <script src='https://code.jquery.com/jquery-1.11.3.js'></script>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+
+  </head>
+  <body>
+    <div id = 'form'>
+       Name:<br><input id='name' type=text><br>
+       Password:<br><input id='psw' type=text size=20><br>
+       <button id='login'>login</button>
+    </div>
+    <ul id ='myname'></ul>
+    <ul id='messages'></ul>
+    <ul id='userList'></ul>
+	<div id='footer'>
+		<div id='chatInputBar'>
+			<button id = 'snedMessageBtn'>Send</button>
+            <div id = 'userControl'>
+                <button id='addUserBtn'>+</button>
+			</div>
+			<span><input id='m' autocomplete='off'/></span>
+		</div>
+    </div>
+
+	<script>
+        var socket = io();
+        var authorize = false;
+		var user_name;
+        var receive_name = ['all'];
+        var group_name;
+        //save all the groups
+        var group = {'all':['all']};
+
+		socket.on('add userList', function (data) {
+      group[data.group] = data.name;
+      group_name = data.group;
+        //add user list to selector without user-self
+        console.log('in add userList');
+			  if(user_name!=data.name){
+            $('#userList').append($('<button></button>').attr('id', 'clicked').attr('value',data.group).text(data.group));
+            console.log('add userList '+group_name);
+			  }
+    });
+
+        socket.on('user join',function (data) {
+            console.log('in user join');
+            $('#messages').append($('<li>').text(Time2Date(new Date())+ data.name + ' Join'));
+			ScrollBarMoveBottom();
+        });
+
+        socket.on('pass auth', function(data){
+            authorize = data.auth;
+            console.log(authorize);
+            $('#form').remove();
+			$('#m').val('');
+            $('#userList').append($('<button></button>').attr('id', 'clicked').attr('value','all').text('all'));
+            $('#myname').append($('<li>').text('User: '+ data.name));
+        })
+		
+
+        socket.on('login fail', function(fail){
+            if(fail){
+                alert('Wrong user name or wrong password!');
+            }
+        });
+
+		socket.on('user_name exist', function (name) {
+            alert('User '+name+' has already logged in QQ');
+        });
+	      //var data = {}	
+        socket.on('chat message', function (data) {
+		  	AppendMessage(data);
+		    ScrollBarMoveBottom();
+        });
+
+        socket.on('append old message', function(msg){
+		    $('#messages').append($('<li>').text(Time2Date(msg.timestamp) +msg.from_user+ ': '+msg.message));
+        })
+		
+		
+		socket.on('disconnect', function (Name) {
+            $('#messages').append($('<li>').text(Time2Date(new Date())+ Name + ' Left'));
+			//remove leaved user in selector 
+			$('#userList').find('[value=\''+Name+'\']').remove();
+            ScrollBarMoveBottom();
+
+        });
+	    
+        $('#userList').on('click', '#clicked', function(){
+            var button = $(this);
+
+            if(group[button.context.innerText] != receive_name){
+                console.log('group: '+button.context.innerText);
+                console.log('user in group '+group[button.context.innerText]);
+              
+                receive_name = group[button.context.innerText];
+                console.log('In userList after clicked = '+receive_name);
+                $('#messages').empty();
+			    $('#messages').append($('<li>').text(Time2Date(new Date())+ 'In ' + button.context.innerText));
+                ScrollBarMoveBottom();
+                
+                if(receive_name.length > 1){
+                    var data = {name:receive_name};
+                }
+              else{
+                    var rename = receive_name.slice();
+                    rename.push(user_name);
+                    var data = {name:rename};   
+                }
+                socket.emit('old message', data);
+            }
+        });
+
+
+        $('#login').click(function () {
+            user_name = $('#name').val(); 
+            var password = $('#psw').val();
+            var info = {name:user_name, psw:password};
+            socket.emit('auth', info);
+
+            console.log(password);
+            console.log(user_name);
+            console.log(authorize);
+        });
+
+		$('#addUserBtn').click(function () {
+            MultiUserGroup();
+            oldMessage();
+            socket.emit('add group', receive_name,group_name);
+        });
+		
+
+        //when focus on message input and press enter key
+		$('#m').keydown(function (e) {
+			if (e.keyCode == 13 && authorize) {
+				submitMessage();
+			}
+        });
+
+		$('#snedMessageBtn').click(function () {
+			submitMessage();
+        });
+
+        /*
+		$(window).on('beforeunload', function () {
+            return 'Are you sure want to leave??';
+        });*/
+
+
+        function MultiUserGroup(){
+            var multi_users = prompt('Please enter the user you want to add','');
+            group_name = prompt('Please enter the group name','');
+            if(group_name != '' && multi_users!=''){
+                multi_users = multi_users.split(' ');
+                multi_users.push(user_name);
+                oldMessage();
+            }
+
+            group[group_name] = multi_users;
+            receive_name = multi_users;
+            console.log("in multiuser "+receive_name);
+            console.log("in multiuser group "+group[group_name])
+        }
+
+		
+		/*function AskUserName(){
+			while(user_name == null || user_name == ''){
+                user_name = prompt('Please enter your name', 'Ayou');
+            }
+			$('#myname').append($('<li>').text('User: '+user_name));
+			socket.emit('new user',user_name);
+		}*/
+		
+		//make message scrollbar always at bottom
+		function ScrollBarMoveBottom(){
+			$('#messages').animate({
+				scrollTop: $('#messages')[0].scrollHeight
+			},'slow');
+		}
+		
+		
+		//submit string messages
+		function submitMessage(){
+			if($('#m').val().trim() != ''){
+				var date = new Date();
+                $('#messages').css('bottom',$('#footer').outerHeight());
+        var data = {name:user_name, rename:receive_name, msg:$('#m').val(), date:date};
+        console.log('In submitmessage: '+data.name+' '+data.rename);
+				AppendMessage(data)
+				ScrollBarMoveBottom();
+                socket.emit('chat message',data);
+				$('#m').val('');
+			}
+        }
+
+		
+        function AppendMessage(data){
+            console.log(data);
+			if(receive_name[0] == 'all'){
+				$('#messages').append($('<li>').text(Time2Date(data.date) +data.name+ ': '+data.msg));
+			}
+			else{
+          $('#messages').append($('<li>').text(Time2Date(data.date) +data.name+ ': '+data.msg).css({
+					'font-weight': 'bolder'
+					}));
+			}			
+		}
+		
+	
+		function Time2Date(currentdate){
+			var date = new Date(currentdate);
+            var datetime ='[ ' + Appendzero(date.getHours()) + ':' + Appendzero(date.getMinutes()) + 
+                ':' + Appendzero(date.getSeconds())+' ] ';
+			return datetime;
+		}
+
+		function Appendzero(num){
+			if(num<10) return "0" +""+ num;
+			else return num;
+        }
+
+
+        function oldMessage(){
+          $('#message').empty();
+
+        }
+		
+		//AskUserName();
+    </script>
+</body>
+</html>
