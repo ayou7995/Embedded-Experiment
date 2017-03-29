@@ -33,6 +33,33 @@ let getHashTableCode = function(key) {
   return Math.abs(hash);
 }
 
+function query_belong_group(username, callback) {
+  c.query('USE ayou7995_chatroom');
+  let query1 = c.query(stats.query_belong_groupid, [username]);
+  query1.on('result', function(res1) {
+    res1.on('data', function(row1) {
+      let group = {};
+      let groupname;
+      let query2 = c.query(stats.query_belong_groupname,[row1.groupid]);
+      query2.on('result', function(res2) {
+        res2.on('data', function(row2) {
+          groupname = row2.groupname;
+          group[row2.groupname] = [];
+        });
+      })
+      let query3 = c.query(stats.query_belong_groupmember, [row1.groupid]);
+      query3.on('result', function(res3) {
+        res3.on('data', function(row3) {
+          group[groupname].push(row3.username);
+        }).on('end',function() {
+          callback(group);
+        });
+      })
+    }).on('end', function() {
+      console.log('Result set finished');
+    });
+  })
+}
 
 function login(name, passwd, callback) {
   let flag = true;
@@ -153,4 +180,5 @@ module.exports.login = login;
 module.exports.getDateString = getDateString; 
 module.exports.begin_chat = begin_chat; 
 module.exports.update_groupname = update_groupname; 
+module.exports.query_belong_group = query_belong_group;
 

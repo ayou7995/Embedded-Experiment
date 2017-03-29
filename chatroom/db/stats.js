@@ -23,6 +23,28 @@ var query_prev_message = 'SELECT CHATGROUP.groupname, MESSAGE.from_user, MESSAGE
                           WHERE destination_id = ? \
                           AND MESSAGE.destination_id = CHATGROUP.groupid \
                           ORDER BY MESSAGE.timestamp';
+var query_belong_groupid = 'SELECT groupid \
+                            FROM BELONG_TO \
+                            WHERE username = ? \
+                            AND groupid in (SELECT groupid \
+                                            FROM BELONG_TO \
+                                            GROUP BY groupid \
+                                            HAVING COUNT(username) > 2)'
+var query_belong_groupname = 'SELECT groupname \
+                              FROM CHATGROUP \
+                              WHERE groupid = ?'
+var query_belong_groupmember = 'SELECT username \
+                                FROM BELONG_TO \
+                                WHERE groupid = ?'
+//var query_belong_group = 'SELECT groupname \
+                          //FROM CHATGROUP \
+                          //WHERE groupid in (SELECT groupid \
+                                            //FROM BELONG_TO \
+                                            //WHERE groupid in (SELECT groupid \
+                                                              //FROM BELONG_TO \
+                                                              //GROUP BY groupid \
+                                                              //HAVING COUNT(username) > 2) \
+                                            //AND username = ?)';
 
 var update_groupname = 'UPDATE CHATGROUP SET groupname = ? WHERE groupid = ?';
 
@@ -35,5 +57,8 @@ module.exports.use_database = use_database;
 module.exports.query_user = query_user;
 module.exports.query_chatgroup_exist = query_chatgroup_exist;
 module.exports.query_prev_message = query_prev_message;
+module.exports.query_belong_groupid = query_belong_groupid;
+module.exports.query_belong_groupname = query_belong_groupname;
+module.exports.query_belong_groupmember = query_belong_groupmember;
 module.exports.update_groupname = update_groupname;
 
