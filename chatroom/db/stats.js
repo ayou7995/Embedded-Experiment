@@ -26,6 +26,7 @@ var query_prev_message = 'SELECT CHATGROUP.groupname, MESSAGE.from_user, MESSAGE
 var query_belong_groupid = 'SELECT groupid \
                             FROM BELONG_TO \
                             WHERE username = ? \
+                            AND groupid <> 0 \
                             AND groupid in (SELECT groupid \
                                             FROM BELONG_TO \
                                             GROUP BY groupid \

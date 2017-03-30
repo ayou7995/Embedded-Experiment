@@ -29,6 +29,10 @@ io.on('connection', function(socket){
                   socket.emit('add userList', data);
               }
 
+              db.query_belong_group(info.name, function(group){
+                  socket.emit('add userList', group);
+              });
+
 	          if(all_users.indexOf(info.name)==-1){
 		          all_users.push(info.name);
 		          all_sockets.push(socket);
@@ -37,9 +41,6 @@ io.on('connection', function(socket){
 
               else{
                   io.emit('relogin',info.name);
-                  db.query_belong_group(info.name, function(group){
-                      socket.emit('add userList', group.group_name);
-                  });
               }
           }
           else{

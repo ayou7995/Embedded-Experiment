@@ -76,7 +76,9 @@
         socket.on('user join',function (data) {
             console.log('in user join');
             var data = {name:data.name, rename:['all'], msg:data.name+' Join ><', date:Time2Date(new Date())};
-            socket.emit('chat message', data);
+            var first_login_msg = {name:['all', data.name]};
+            socket.emit('old message',first_login_msg);
+            //socket.emit('chat message', data);
 			ScrollBarMoveBottom();
         });
 
@@ -87,8 +89,8 @@
             $('#form').remove();
 			$('#m').val('');
             $('#userList').append($('<button></button>').attr('id', 'clicked').attr('value','all').text('all'));
-            $('#myname').append($('<li>').text('User: '+ data.name));
-            socket.emit('old message',['all',data.name]);
+          $('#myname').append($('<li>').text('User: '+ data.name));
+
 
         })
 		
