@@ -6,7 +6,6 @@ var db = require('./db/test.js');
 var all_users = [];
 var all_sockets = [];
 var all_msg = [];
-//var auth_info = {'frank':'123456', 'ayou':'1268', 'david':'4603', 'alex':'0207'};
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
@@ -17,28 +16,31 @@ io.on('connection', function(socket){
     socket.on('auth', function(info){
       db.login(info.name, info.psw, function(auth){
           if(auth){
-              console.log('authorize!');
-	            if(all_users.indexOf(info.name)==-1){
-		              all_users.push(info.name);
-		              all_sockets.push(socket);
-                  var d = {name:info.name, auth:true};
-		              socket.emit('pass auth', d);
-		              io.emit('user join', d);
+              var d = {name:info.name, auth:true};
+		      io.emit('user join', d);
+		      socket.emit('pass auth', d);
 
-                  var data = {name:[info.name], group:info.name};
-                  console.log('data in new user: '+data);
-		              io.emit('add userList', data);
-                  socket.rename = 'all';
-                  socket.user_name = info.name;
+              var data = {name:[info.name], group:info.name};
+              socket.rename = 'all';
+              socket.user_name = info.name;
+		      io.emit('add userList', data);
+              for (var i = 0; i < all_users.length; i++) {
+                  var data = {name:[all_users[i]], group:all_users[i]};
+                  socket.emit('add userList', data);
+              }
 
-                  for (var i = 0; i < all_users.length; i++) {
-                      var data = {name:[all_users[i]], group:all_users[i]};
-                      socket.emit('add userList', data);
-                  }
-	            }
-	            else{
-		              socket.emit('user_name exist', info.name);
-	            }
+	          if(all_users.indexOf(info.name)==-1){
+		          all_users.push(info.name);
+		          all_sockets.push(socket);
+
+	          }
+
+              else{
+                  io.emit('relogin',info.name);
+                  db.query_belong_group(info.name, function(group){
+                      socket.emit('add userList', group.group_name);
+                  });
+              }
           }
           else{
               socket.emit('login fail',true);  
@@ -127,19 +129,20 @@ io.on('connection', function(socket){
 		//problem: sometimes client receive null left message, and nobody was disconnect.
 		if(all_users[all_sockets.indexOf(socket)] != null){
 			io.emit('disconnect', all_users[all_sockets.indexOf(socket)]);
-      console.log('dis: '+all_users[all_sockets.indexOf(socket)]+' '+typeof(all_users[all_sockets.indexOf(socket)]));
+            console.log('dis: '+all_users[all_sockets.indexOf(socket)]+' '+typeof(all_users[all_sockets.indexOf(socket)]));
 		}
 		//remove leaved user's name and socket
-		all_users.splice(all_sockets.indexOf(socket),1);
-		all_sockets.splice(all_sockets.indexOf(socket),1);
+		//all_users.splice(all_sockets.indexOf(socket),1);
+		//all_sockets.splice(all_sockets.indexOf(socket),1);
 	}
   });
 
-  socket.on('add group', function(receive_name,group_name){
-      for(var i = 0; i<receive_name.length; ++i){
-          var data = {name:receive_name, group:group_name};
-          all_sockets[all_users.indexOf(receive_name[i])].emit('add userList', data);
+  socket.on('add group', function(group_member, group_name){
+      for(var i = 0; i<group_member.length; ++i){
+          var data = {name:group_member, group:group_name};
+          all_sockets[all_users.indexOf(group_member[i])].emit('add userList', data);
       }
+      update_group_name(group_member, group_name);
   });
   
   //when a new client connected add current users to client selector

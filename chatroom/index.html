@@ -12,7 +12,7 @@
 	  #chatInputBar span { display: block; overflow: hidden; padding: 0 5px;}
       #chatInputBar #addUserBtn { border: 0; padding: 10px; width: auto; 
           background: rgb(130, 224, 255); color:#000000;}
-      #chatInputBar #snedMessageBtn { border: 0; padding: 10px; width: auto; 
+      #chatInputBar #sendMessageBtn { border: 0; padding: 10px; width: auto; 
           background: rgb(130, 224, 255); float: right; color:#000000;}
       #messages {margin-left:270px; margin-top:40px ;margin-bottom:20px;background:#708090;width:70%; 
           position: fixed; top:0; bottom: 64px; overflow:auto;}
@@ -43,7 +43,7 @@
     <ul id='userList'></ul>
 	<div id='footer'>
 		<div id='chatInputBar'>
-			<button id = 'snedMessageBtn'>Send</button>
+			<button id = 'sendMessageBtn'>Send</button>
             <div id = 'userControl'>
                 <button id='addUserBtn'>+</button>
 			</div>
@@ -57,26 +57,30 @@
 		var user_name;
         var receive_name = ['all'];
         var group_name;
-        //save all the groups
         var group = {'all':['all']};
 
-		socket.on('add userList', function (data) {
-      group[data.group] = data.name;
-      group_name = data.group;
+        //show the user list on the left side of the UI       
+        socket.on('add userList', function (data) {
+        group[data.group] = data.name;
+        group_name = data.group;
+
         //add user list to selector without user-self
         console.log('in add userList');
 			  if(user_name!=data.name){
             $('#userList').append($('<button></button>').attr('id', 'clicked').attr('value',data.group).text(data.group));
             console.log('add userList '+group_name);
 			  }
-    });
+        });
 
+        //Send the message that the user has joined
         socket.on('user join',function (data) {
             console.log('in user join');
-            $('#messages').append($('<li>').text(Time2Date(new Date())+ data.name + ' Join'));
+            var data = {name:data.name, rename:['all'], msg:data.name+' Join ><', date:Time2Date(new Date())};
+            socket.emit('chat message', data);
 			ScrollBarMoveBottom();
         });
 
+        //remove the log in section and add the user list
         socket.on('pass auth', function(data){
             authorize = data.auth;
             console.log(authorize);
@@ -84,19 +88,23 @@
 			$('#m').val('');
             $('#userList').append($('<button></button>').attr('id', 'clicked').attr('value','all').text('all'));
             $('#myname').append($('<li>').text('User: '+ data.name));
+            socket.emit('old message',['all',data.name]);
+
         })
 		
-
+        //tell the user to log in again
         socket.on('login fail', function(fail){
             if(fail){
                 alert('Wrong user name or wrong password!');
             }
         });
 
-		socket.on('user_name exist', function (name) {
-            alert('User '+name+' has already logged in QQ');
-        });
-	      //var data = {}	
+        //change the color of teh name in the user list when login again
+        socket.on('relogin', function(name){
+            $('#userList').find('[value=\''+Name+'\']').css({'color': '#000000'});
+            ScrollBarMoveBottom(); 
+        })
+
         socket.on('chat message', function (data) {
 		  	AppendMessage(data);
 		    ScrollBarMoveBottom();
@@ -104,13 +112,18 @@
 
         socket.on('append old message', function(msg){
 		    $('#messages').append($('<li>').text(Time2Date(msg.timestamp) +msg.from_user+ ': '+msg.message));
+            ScrollBarMoveBottom();
         })
 		
 		
 		socket.on('disconnect', function (Name) {
-            $('#messages').append($('<li>').text(Time2Date(new Date())+ Name + ' Left'));
+            var data = {name:Name, rename:['all'], msg:data.name+' Left QQ', date:Time2Date(new Date())};
+            socket.emit('chat message', data);
+			ScrollBarMoveBottom();
+            //$('#messages').append($('<li>').text(Time2Date(new Date())+ Name + ' Left'));
 			//remove leaved user in selector 
-			$('#userList').find('[value=\''+Name+'\']').remove();
+			//$('#userList').find('[value=\''+Name+'\']').remove();
+            $('#userList').find('[value=\''+Name+'\']').css({'font': '#FFFFFF'});
             ScrollBarMoveBottom();
 
         });
@@ -154,7 +167,6 @@
 
 		$('#addUserBtn').click(function () {
             MultiUserGroup();
-            oldMessage();
             socket.emit('add group', receive_name,group_name);
         });
 		
@@ -166,7 +178,7 @@
 			}
         });
 
-		$('#snedMessageBtn').click(function () {
+		$('#sendMessageBtn').click(function () {
 			submitMessage();
         });
 
@@ -182,7 +194,7 @@
             if(group_name != '' && multi_users!=''){
                 multi_users = multi_users.split(' ');
                 multi_users.push(user_name);
-                oldMessage();
+                $('#message').empty();
             }
 
             group[group_name] = multi_users;
@@ -191,14 +203,6 @@
             console.log("in multiuser group "+group[group_name])
         }
 
-		
-		/*function AskUserName(){
-			while(user_name == null || user_name == ''){
-                user_name = prompt('Please enter your name', 'Ayou');
-            }
-			$('#myname').append($('<li>').text('User: '+user_name));
-			socket.emit('new user',user_name);
-		}*/
 		
 		//make message scrollbar always at bottom
 		function ScrollBarMoveBottom(){
@@ -213,8 +217,8 @@
 			if($('#m').val().trim() != ''){
 				var date = new Date();
                 $('#messages').css('bottom',$('#footer').outerHeight());
-        var data = {name:user_name, rename:receive_name, msg:$('#m').val(), date:date};
-        console.log('In submitmessage: '+data.name+' '+data.rename);
+                var data = {name:user_name, rename:receive_name, msg:$('#m').val(), date:date};
+                console.log('In submitmessage: '+data.name+' '+data.rename);
 				AppendMessage(data)
 				ScrollBarMoveBottom();
                 socket.emit('chat message',data);
@@ -248,13 +252,7 @@
 			else return num;
         }
 
-
-        function oldMessage(){
-          $('#message').empty();
-
-        }
 		
-		//AskUserName();
     </script>
 </body>
 </html>
