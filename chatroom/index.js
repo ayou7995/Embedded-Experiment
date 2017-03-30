@@ -53,7 +53,8 @@ io.on('connection', function(socket){
   });
 
   socket.on('chat message', function(data){
-    socket.rename = data.rename;
+    //socket.rename = data.rename;
+    change_socket_rename(data.rename, function(rename){
     console.log('socket.rename = '+socket.rename);
     console.log('socket.user_name = '+socket.user_name);
 
@@ -99,7 +100,7 @@ io.on('connection', function(socket){
             all_msg.push(JSON.stringify(data));
            }
         }
-    }
+    }});
   });
 
   socket.on('old message', function(data){
@@ -162,6 +163,11 @@ io.on('connection', function(socket){
 http.listen(process.env.PORT || 5000, function(){
   console.log('listening on *:5000');
 });
+
+function change_socket_rename(rename, callback){
+    socket.rename = rename;
+    callback(socket.rename);
+}
       /*if(auth_info[info.name] == info.psw){
           console.log('authorize!');
 	      if(all_users.indexOf(info.name)==-1){
