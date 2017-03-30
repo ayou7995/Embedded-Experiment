@@ -103,7 +103,7 @@
 
         //change the color of teh name in the user list when login again
         socket.on('relogin', function(name){
-            $('#userList').find('[value=\''+Name+'\']').css({'color': '#000000'});
+            $('#userList').find('[value=\''+Name+'\']').css({'color': '#FOE68C'});
             ScrollBarMoveBottom(); 
         })
 
@@ -118,14 +118,15 @@
         })
 		
 		
-		socket.on('disconnect', function (Name) {
-            var data = {name:Name, rename:['all'], msg:data.name+' Left QQ', date:Time2Date(new Date())};
-            socket.emit('chat message', data);
+socket.on('disconnect', function (Name) {
+            //var date = new Date();
+            //var data = {name:Name, rename:['all'], msg:Name+' Left QQ', date:Time2Date(date)};
+            //socket.emit('chat message', data);
 			ScrollBarMoveBottom();
-            //$('#messages').append($('<li>').text(Time2Date(new Date())+ Name + ' Left'));
+      $('#messages').append($('<li>').text(Time2Date(new Date())+ Name + ' Left'));
 			//remove leaved user in selector 
 			//$('#userList').find('[value=\''+Name+'\']').remove();
-            $('#userList').find('[value=\''+Name+'\']').css({'font': '#FFFFFF'});
+            $('#userList').find('[value=\''+Name+'\']').css({'color': '#FFFFFF'});
             ScrollBarMoveBottom();
 
         });
@@ -169,7 +170,7 @@
 
 		$('#addUserBtn').click(function () {
             MultiUserGroup();
-            socket.emit('add group', receive_name,group_name);
+            //socket.emit('add group', receive_name,group_name);
         });
 		
 
@@ -203,6 +204,7 @@
             receive_name = multi_users;
             console.log("in multiuser "+receive_name);
             console.log("in multiuser group "+group[group_name])
+            socket.emit('add group', multi_users,group_name);
         }
 
 		

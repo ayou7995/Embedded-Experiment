@@ -17,13 +17,24 @@ io.on('connection', function(socket){
       db.login(info.name, info.psw, function(auth){
           if(auth){
               var d = {name:info.name, auth:true};
-		      io.emit('user join', d);
-		      socket.emit('pass auth', d);
+		          io.emit('user join', d);
+		          socket.emit('pass auth', d);
 
               var data = {name:[info.name], group:info.name};
               socket.rename = 'all';
               socket.user_name = info.name;
-		      io.emit('add userList', data);
+
+	            if(all_users.indexOf(info.name)==-1){
+                  console.log(info.name+' first');
+		              all_users.push(info.name);
+		              all_sockets.push(socket);
+		              io.emit('add userList', data);
+	            }
+
+              else{
+                  io.emit('relogin',info.name);
+              }
+
               for (var i = 0; i < all_users.length; i++) {
                   var data = {name:[all_users[i]], group:all_users[i]};
                   socket.emit('add userList', data);
@@ -33,15 +44,6 @@ io.on('connection', function(socket){
                   socket.emit('add userList', group);
               });
 
-	          if(all_users.indexOf(info.name)==-1){
-		          all_users.push(info.name);
-		          all_sockets.push(socket);
-
-	          }
-
-              else{
-                  io.emit('relogin',info.name);
-              }
           }
           else{
               socket.emit('login fail',true);  
@@ -81,7 +83,8 @@ io.on('connection', function(socket){
                 console.log('all_users: '+all_users[k]+' '+typeof(all_users[k]));
             }
             console.log('\n individual: '+data.rename[i]+' '+typeof(data.rename[i]));
-            console.log('allusers data.rename[i]' +all_users.indexOf[data.rename[i]]);
+            console.log('all_users:'+typeof(all_users[1]));
+            console.log('all users data.rename[i]' +all_users.indexOf(data.rename[i]));
             console.log(all_sockets[all_users.indexOf(data.rename[i])].rename);
             if(all_sockets[all_users.indexOf(data.rename[i])].rename.indexOf(data.name)!=-1){
                 //if(data.rename[i] == 'all'){
@@ -122,8 +125,7 @@ io.on('connection', function(socket){
 		io.emit('user_name exist', user_name);
 	}
   });*/
-  
-  
+   
   socket.on('disconnect', function(){
 	if(all_sockets.indexOf(socket)!=-1){
 		//when disconnect username doesn't null, show user left message
@@ -143,7 +145,15 @@ io.on('connection', function(socket){
           var data = {name:group_member, group:group_name};
           all_sockets[all_users.indexOf(group_member[i])].emit('add userList', data);
       }
-      update_group_name(group_member, group_name);
+      console.log(typeof(group_name)+' '+typeof(group_member));
+      console.log(group_name+' '+group_member);
+      
+      db.begin_chat(group_member, function(msg){
+          if (msg!="") {
+              socket.emit('append old message',msg);
+          }
+          db.update_groupname(group_member, group_name);
+      });
   });
   
   //when a new client connected add current users to client selector

@@ -21,7 +21,8 @@ db.query_belong_group('BOB', callback);
 //db.begin_chat(['Bob','Cherry'], callback);
 //db.begin_chat(['Cherry', 'Amy'], callback);
 
-////db.update_groupname(['Amy','Bob'], 'AMY&BOB');
+db.update_groupname(['Q','T','R'], 'CRACKER');
+//db.update_groupname(['AMY','DAVID','BOB'], 'FUCKTHATSHIT');
 ////db.update_groupname(['Bob','Cherry'],'BOB&CHERRY');
 ////db.update_groupname(['Cherry', 'Amy'],'CHERRY&AMY');
 

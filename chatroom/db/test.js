@@ -108,8 +108,20 @@ function add_message(from_user, users, time, msg_type, msg) {
 function update_groupname(users, new_groupname) {
   c.query('USE ayou7995_chatroom');
   var gid = getHashTableCode(users.sort().join());
+  console.log(gid);
+  console.log(users);
+  console.log(new_groupname);
   var arr = [new_groupname,gid];
-  c.query(stats.update_groupname, arr, function(err, rows) {})
+  c.query(stats.update_groupname, arr, function(err, rows) {
+    if(err) {
+      console.log(err);
+      console.log("Error : Groupname not updated")
+    }
+    else {
+      console.log(rows);
+      console.log("Groupname change to : " + new_groupname)
+    }
+  }) 
 }
 
 function begin_chat(users, callback) {
@@ -128,6 +140,7 @@ function begin_chat(users, callback) {
         retrieve_prev_message(gid, callback);
       }
       else{
+        console.log('Add new chatgroup: gid=' + gid + ', users = '+users); 
         add_new_chatgroup(gid,users,callback);
       }
     })
@@ -153,7 +166,17 @@ function retrieve_prev_message(gid, callback) {
 function add_new_chatgroup(gid, users, callback) {
   let arr = [gid, users.sort().join()];
   c.query('USE ayou7995_chatroom');
-  c.query(stats.add_chatgroup, arr, function(err, rows){})
+  c.query(stats.add_chatgroup, arr, function(err, rows){
+    if(err){
+      console.log('In add_new_chatgroup function, Error occurs');
+      console.log(err);
+    }
+    else{
+      callback("")
+      console.log('In add_new_chatgroup function, every thing good');      
+      console.log(rows);
+    }
+  })
   for (key in users) {
     bind_user_to_group(users[key], gid, getDateString(new Date()));
   }
@@ -162,7 +185,16 @@ function add_new_chatgroup(gid, users, callback) {
 function bind_user_to_group(username, gid, time) {
   let arr = [username, gid, time];
   c.query('USE ayou7995_chatroom');
-  c.query(stats.bind_user_to_group, arr, function(err, rows) {})
+  c.query(stats.bind_user_to_group, arr, function(err, rows) {
+    if(err){
+      console.log('In bind_user_to_group function, Error occurs');
+      console.log(err);
+    }
+    else{
+      console.log('In bind_user_to_group function, every thing good');      
+      console.log(rows);
+    }
+  })
 }
 
 var c = new Client({
