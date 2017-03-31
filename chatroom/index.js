@@ -52,9 +52,12 @@ io.on('connection', function(socket){
 
   });
 
+  socket.on('change socket rename', function(rename){
+      socket.rename = rename;     
+  });
+
   socket.on('chat message', function(data){
     //socket.rename = data.rename;
-    change_socket_rename(data.rename, function(rename){
     console.log('socket.rename = '+socket.rename);
     console.log('socket.user_name = '+socket.user_name);
 
@@ -84,48 +87,27 @@ io.on('connection', function(socket){
                 console.log('all_users: '+all_users[k]+' '+typeof(all_users[k]));
             }
             console.log('\n individual: '+data.rename[i]+' '+typeof(data.rename[i]));
-            console.log('all_users:'+typeof(all_users[1]));
-            console.log('all users data.rename[i]' +all_users.indexOf(data.rename[i]));
-            console.log(all_sockets[all_users.indexOf(data.rename[i])].rename);
-            if(all_sockets[all_users.indexOf(data.rename[i])].rename.indexOf(data.name)!=-1){
-                //if(data.rename[i] == 'all'){
-                    //socket.broadcast.emit('chat message', data)
-                //}
- //               else{
-
+            console.log(all_sockets[all_users.indexOf(data.rename[i])].rename+'\n');
+            
+            var receiver_rename = all_sockets[all_users.indexOf(data.rename[i])].rename;
+            if((receiver_rename.length == data.rename.length) && (receiver_rename.indexOf(data.name)!=-1)){
                 if(data.rename[i] != data.name){
                     all_sockets[all_users.indexOf(data.rename[i])].emit('chat message', data);
                 }
-           // }
             all_msg.push(JSON.stringify(data));
            }
         }
-    }});
+    }
   });
 
   socket.on('old message', function(data){
       db.begin_chat(data.name, function(msg){
-          socket.emit('append old message',msg);
+          if(msg!=''){
+              socket.emit('append old message',msg);
+          }
       });
   });
 
-  
-  /*
-  socket.on('new user', function(user_name){
-	//check user's name exist or not
-	if(all_users.indexOf(user_name)==-1){
-		all_users.push(user_name);
-		all_sockets.push(socket);
-		io.emit('user join', user_name);
-
-        var data = {name:[user_name], group:user_name};
-        console.log('data in new user: '+data);
-		io.emit('add userList', data);
-	}
-	else{
-		io.emit('user_name exist', user_name);
-	}
-  });*/
    
   socket.on('disconnect', function(){
 	if(all_sockets.indexOf(socket)!=-1){
@@ -135,9 +117,6 @@ io.on('connection', function(socket){
 			io.emit('disconnect', all_users[all_sockets.indexOf(socket)]);
             console.log('dis: '+all_users[all_sockets.indexOf(socket)]+' '+typeof(all_users[all_sockets.indexOf(socket)]));
 		}
-		//remove leaved user's name and socket
-		//all_users.splice(all_sockets.indexOf(socket),1);
-		//all_sockets.splice(all_sockets.indexOf(socket),1);
 	}
   });
 
@@ -164,34 +143,3 @@ http.listen(process.env.PORT || 5000, function(){
   console.log('listening on *:5000');
 });
 
-function change_socket_rename(rename, callback){
-    socket.rename = rename;
-    callback(socket.rename);
-}
-      /*if(auth_info[info.name] == info.psw){
-          console.log('authorize!');
-	      if(all_users.indexOf(info.name)==-1){
-		      all_users.push(info.name);
-		      all_sockets.push(socket);
-              var d = {name:info.name, auth:true};
-		      socket.emit('pass auth', d);
-		      io.emit('user join', d);
-
-              var data = {name:[info.name], group:info.name};
-              console.log('data in new user: '+data);
-		      io.emit('add userList', data);
-              socket.rename = 'all';
-              socket.user_name = info.name;
-
-              for (var i = 0; i < all_users.length; i++) {
-                  var data = {name:[all_users[i]], group:all_users[i]};
-                  socket.emit('add userList', data);
-              }
-	      }
-	      else{
-		      socket.emit('user_name exist', info.name);
-	      }
-      }
-      else{
-          socket.emit('login fail',true);  
-      }*/

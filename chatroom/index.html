@@ -75,10 +75,6 @@
         //Send the message that the user has joined
         socket.on('user join',function (data) {
             console.log('in user join');
-            var data = {name:data.name, rename:['all'], msg:data.name+' Join ><', date:Time2Date(new Date())};
-            var first_login_msg = {name:['all', data.name]};
-            socket.emit('old message',first_login_msg);
-            //socket.emit('chat message', data);
 			ScrollBarMoveBottom();
         });
 
@@ -90,6 +86,8 @@
 			$('#m').val('');
             $('#userList').append($('<button></button>').attr('id', 'clicked').attr('value','all').text('all'));
           $('#myname').append($('<li>').text('User: '+ data.name));
+            var first_login_msg = {name:['all', data.name]};
+            socket.emit('old message',first_login_msg);
 
 
         })
@@ -119,13 +117,8 @@
 		
 		
 socket.on('disconnect', function (Name) {
-            //var date = new Date();
-            //var data = {name:Name, rename:['all'], msg:Name+' Left QQ', date:Time2Date(date)};
-            //socket.emit('chat message', data);
 			ScrollBarMoveBottom();
       $('#messages').append($('<li>').text(Time2Date(new Date())+ Name + ' Left'));
-			//remove leaved user in selector 
-			//$('#userList').find('[value=\''+Name+'\']').remove();
             $('#userList').find('[value=\''+Name+'\']').css({'color': '#FFFFFF'});
             ScrollBarMoveBottom();
 
@@ -139,6 +132,7 @@ socket.on('disconnect', function (Name) {
                 console.log('user in group '+group[button.context.innerText]);
               
                 receive_name = group[button.context.innerText];
+                socket.emit('change socket rename', receive_name);
                 console.log('In userList after clicked = '+receive_name);
                 $('#messages').empty();
 			    $('#messages').append($('<li>').text(Time2Date(new Date())+ 'In ' + button.context.innerText));
@@ -170,7 +164,6 @@ socket.on('disconnect', function (Name) {
 
 		$('#addUserBtn').click(function () {
             MultiUserGroup();
-            //socket.emit('add group', receive_name,group_name);
         });
 		
 
@@ -184,11 +177,6 @@ socket.on('disconnect', function (Name) {
 		$('#sendMessageBtn').click(function () {
 			submitMessage();
         });
-
-        /*
-		$(window).on('beforeunload', function () {
-            return 'Are you sure want to leave??';
-        });*/
 
 
         function MultiUserGroup(){
