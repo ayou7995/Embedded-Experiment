@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+
+  <head>
+    <script src = 'https://cdn.socket.io/socket.io-1.3.5.js'></script>
+	  <script src = 'https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.js'></script>
+    <script type="text/javascript">
+      var socket = io();
+
+	    window.onload = function () {
+		    var dps = []; // dataPoints
+		    var dps2 = []; // dataPoints
+		    var dps3 = []; // dataPoints
+
+		    var chart = new CanvasJS.Chart("chartContainer",{
+		      title :{
+				    text: "servo1"
+			    },			
+			    data: [{
+            type: "line",
+				    dataPoints: dps 
+			    }]
+        });
+
+		    var chart2 = new CanvasJS.Chart("chartContainer2",{
+			    title :{
+				    text: "servo2"
+			    },			
+			    data: [{
+            type: "line",
+				    dataPoints: dps2 
+			    }]
+        });
+
+		    var chart3 = new CanvasJS.Chart("chartContainer3",{
+			    title :{
+				    text: "sound"
+			    },			
+			    data: [{
+            type: "line",
+				    dataPoints: dps3 
+			    }]
+		    });
+
+		    var xVal = 0;
+        var yVal = 0;
+        var yVal2 = 0;
+        var yVal3 = 0;
+		    var updateInterval = 100;
+		    var dataLength = 200; // number of dataPoints visible at any point
+
+		    var updateChart = function (count) {
+			    count = count || 1;
+			    // count is number of times loop runs to generate random dataPoints.
+			
+			  for (var j = 0; j < count; j++) {	
+          //yVal = (5 + Math.sin(Math.random() *(-5-5)));
+          socket.emit('request value', function(speed, amplitude){
+              yVal = speed.servo1;
+              yVal2 = speed.servo2;
+              yVal3 = amplitude;
+          });
+
+				  dps.push({
+					  x: xVal,
+					  y: yVal
+          });
+
+				  dps2.push({
+					  x: xVal,
+					  y: yVal2
+          });
+
+				  dps3.push({
+					  x: xVal,
+					  y: yVal3
+				  });
+
+				  xVal++;
+        };
+
+			  if (dps.length > dataLength){
+				  dps.shift();				
+				  dps2.shift();				
+				  dps3.shift();				
+			  }
+			
+			  chart.render();		
+			  chart2.render();		
+			  chart3.render();		
+
+		};
+
+		// generates first set of dataPoints
+		updateChart(dataLength); 
+
+		// update chart after specified time. 
+		setInterval(function(){updateChart()}, updateInterval); 
+
+	}
+	</script>
+</head>
+<body>
+	<div id="chartContainer" style="height: 200px; width:100%;">
+	</div>
+	<div id="chartContainer2" style="height: 200px; width:100%;">
+	</div>
+	<div id="chartContainer3" style="height: 200px; width:100%;">
+	</div>
+</body>
+</html>
